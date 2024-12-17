@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">CurrencyConverterDemo</string>
+    <string-array name="optionsArr">
+        <item>EUR</item>
+        <item>USD</item>
+        <item>GBP</item>
+        <item>JPY</item>
+    </string-array>
+
+</resources>
