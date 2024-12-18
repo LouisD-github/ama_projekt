@@ -10,6 +10,10 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.android.volley.Request
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,21 +56,45 @@ class MainActivity : AppCompatActivity() {
         if (input == output) {
             alert()
             outputField.text = ""
+            return
         }
 
         val amountText = textField.text.toString()
         val amount = amountText.toDoubleOrNull()
         if (amount == null || amount <= 0) {
-            outputField.text = "Umrechnung ..."
+            outputField.text = "Ungültige Eingabe"
             return
         }
 
-        val rate = getRate(input, output)
-        val result = amount * rate
+        val url = "https://api.frankfurter.app/latest?base=$input&symbols=$output"
 
-        outputField.text = String.format("%.2f %s", result, output)
+        val queue = Volley.newRequestQueue(this)
+
+        val stringRequest = StringRequest(Request.Method.GET, url,
+            { response ->
+                try {
+                    val jsonResponse = JSONObject(response)
+                    val rates = jsonResponse.getJSONObject("rates")
+                    if (rates.has(output)) {
+                        val rate = rates.getDouble(output)
+                        val result = amount * rate
+                        outputField.text = String.format("%.2f %s", result, output)
+                    } else {
+                        outputField.text = "Umrechnung fehlgeschlagen"
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    outputField.text = "Umrechnung fehlgeschlagen"
+                }
+            },
+            { error ->
+                error.printStackTrace()
+                outputField.text = "API-Anfrage fehlgeschlagen"
+            })
+        queue.add(stringRequest)
     }
 
+    /*
     private fun getRate(input: String, output: String): Double {
         return when ("$input $output") {
             "EUR EUR" -> 1.0
@@ -92,7 +120,7 @@ class MainActivity : AppCompatActivity() {
             else -> 1.0
         }
     }
-
+*/
     private fun alert() {
         val msg = AlertDialog.Builder(this)
         msg.setTitle("Ungültige Währungsauwahl")
